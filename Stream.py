@@ -1,21 +1,27 @@
-import streamlink
-import subprocess
+import yt_dlp
 
-# URL des Streams
-stream_url = "DEIN_STREAM_LINK"
+# URL des YouTube-Videos oder -Streams
+youtube_url = "https://www.bilibili.com/video/BV1JF411u7mD"
 
-# Abrufen der verfügbaren Streams
-streams = streamlink.streams(stream_url)
+# yt-dlp Optionen
+ydl_opts = {
+    'format': 'bestaudio/best',  # Wähle die beste Audioqualität
+    'noplaylist': True,           # Spielt nur das angegebene Video ab, nicht die gesamte Playlist
+    'quiet': True,                # Unterdrückt Statusmeldungen
+}
 
-# Wähle die beste Qualität (du kannst auch explizit eine andere Qualität angeben, z.B. "audio_only")
-best_stream = streams['best']
+# Informationen abrufen
+with yt_dlp.YoutubeDL(ydl_opts) as ydl:
+    info_dict = ydl.extract_info(youtube_url, download=False)  # download=False für kein Download
+    audio_url = None
 
-# Verwende ffplay, um den Audio-Stream direkt abzuspielen (ffmpeg muss installiert sein)
-command = [
-    "ffplay",
-    "-vn",  # Deaktiviert Video (nur Audio)
-    best_stream.url  # URL des Audio-Streams
-]
+    # Suche nach der besten Audio-URL
+    for fmt in info_dict.get('formats', []):  # Verwende get(), um einen leeren Array zurückzugeben, falls 'formats' nicht existiert
+        if 'acodec' in fmt and fmt['acodec'] != 'none':  # Überprüfen, ob 'acodec' vorhanden ist
+            audio_url = fmt['url']
+            break  # Beende die Schleife nach dem ersten Treffer
 
-# Starte das Abspielen
-subprocess.run(command)
+    if audio_url:
+        print(f"Audio-Stream-URL: {audio_url}")  # Gib die Audio-Stream-URL aus
+    else:
+        print("Keine gültige Audio-Stream-URL gefunden.")
